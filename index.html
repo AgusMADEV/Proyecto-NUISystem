@@ -87,6 +87,16 @@
       text-decoration: line-through;
       opacity: 0.6;
     }
+
+    .estado-completada {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    .estado-pendiente {
+      color: #f59e0b;
+      font-weight: 600;
+    }
     
     .video-container {
       position: relative;
@@ -140,6 +150,7 @@
         <strong>Comandos disponibles:</strong>
         • "agregar [nombre]" - Añade tarea<br>
         • "eliminar [número]" - Elimina tarea<br>
+        • "completar [número]" - Marca tarea como completada<br>
         • "limpiar" - Elimina todas
       </div>
     </div>
@@ -178,11 +189,20 @@
         return;
       }
 
-      let html = '<table><thead><tr><th>#</th><th>Tarea</th></tr></thead><tbody>';
+      let html = '<table><thead><tr><th>#</th><th>Tarea</th><th>Estado</th></tr></thead><tbody>';
       
       tareas.forEach((tarea, index) => {
         const clase = tarea.completada ? 'completada' : '';
-        html += `<tr class="${clase}"><td>${index}</td><td>${tarea.nombre}</td></tr>`;
+        const estadoTexto = tarea.completada ? '✅' : '⏳';
+        const estadoClase = tarea.completada ? 'estado-completada' : 'estado-pendiente';
+        
+        html += `
+          <tr class="${clase}">
+            <td>${index}</td>
+            <td>${tarea.nombre}</td>
+            <td class="${estadoClase}">${estadoTexto}</td>
+          </tr>
+        `;
       });
       
       html += '</tbody></table>';
@@ -201,6 +221,14 @@
         tareas.splice(indice, 1);
         mostrarTabla();
         hablar("Tarea eliminada");
+      }
+    }
+
+    function completar(indice) {
+      if (indice >= 0 && indice < tareas.length) {
+        tareas[indice].completada = true;
+        mostrarTabla();
+        hablar("Tarea completada");
       }
     }
     
@@ -254,6 +282,9 @@
       } else if (comando.includes("eliminar") || comando.includes("borrar")) {
         const num = parseInt(palabras[1]) || 0;
         eliminar(num);
+      } else if (comando.includes("completar") || comando.includes("terminar")) {
+        const num = parseInt(palabras[1]) || 0;
+        completar(num);
       } else if (comando.includes("limpiar")) {
         limpiar();
       }
