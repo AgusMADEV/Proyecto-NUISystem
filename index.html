@@ -151,6 +151,7 @@
         • "agregar [nombre]" - Añade tarea<br>
         • "eliminar [número]" - Elimina tarea<br>
         • "completar [número]" - Marca tarea como completada<br>
+        • "leer tareas" - Lee todas las tareas en voz alta<br>
         • "limpiar" - Elimina todas
       </div>
     </div>
@@ -170,7 +171,7 @@
         ✌️ Dos dedos: Añadir tarea aleatoria<br>
         👍 Pulgar arriba: Completar última tarea pendiente<br>
         ✊ Puño cerrado: Eliminar última tarea<br>
-        🖐️ Mano abierta (5 dedos): Muestra información
+        🖐️ Mano abierta: Leer todas las tareas
       </div>
     </div>
   </div>
@@ -227,14 +228,17 @@
       if (!nombre) return;
       tareas.push({ id: contadorId++, nombre: nombre, completada: false });
       mostrarTabla();
-      hablar("Tarea agregada");
+      hablar(`Tarea agregada: ${nombre}`);
     }
     
     function eliminar(indice) {
       if (indice >= 0 && indice < tareas.length) {
+        const tareaEliminada = tareas[indice];
         tareas.splice(indice, 1);
         mostrarTabla();
-        hablar("Tarea eliminada");
+        hablar(`Tarea eliminada: ${tareaEliminada.nombre}`);
+      } else {
+        hablar("Índice de tarea no válido");
       }
     }
 
@@ -242,33 +246,74 @@
       if (indice >= 0 && indice < tareas.length) {
         tareas[indice].completada = true;
         mostrarTabla();
-        hablar("Tarea completada");
+        hablar(`Tarea completada: ${tareas[indice].nombre}`);
+      } else {
+        hablar("Índice de tarea no válido");
       }
     }
     
     function limpiar() {
       tareas = [];
       mostrarTabla();
-      hablar("Lista limpia");
+      hablar("Todas las tareas han sido eliminadas");
     }
 
-    function mostrarResumen() {
-      const total = tareas.length;
-      const completadas = tareas.filter(t => t.completada).length;
-      const pendientes = total - completadas;
-      hablar(`Tienes ${total} tareas. ${completadas} completadas y ${pendientes} pendientes`);
+    function leerTodasLasTareas() {
+      if (tareas.length === 0) {
+        hablar("No hay tareas en la lista");
+        return;
+      }
+      
+      let mensaje = `Tienes ${tareas.length} tareas. `;
+      tareas.forEach((tarea, index) => {
+        const estado = tarea.completada ? "completada" : "pendiente";
+        mensaje += `Tarea ${index}: ${tarea.nombre}, ${estado}. `;
+      });
+      hablar(mensaje);
     }
     
     // ============================================
-    // VOZ
+    // SÍNTESIS DE VOZ MEJORADA
     // ============================================
+    let voices = [];
+    
+    function cargarVoces() {
+      voices = speechSynthesis.getVoices();
+    }
+    
+    function elegirVozEspañola() {
+      // Buscar voz en español prioritariamente
+      const vozES = voices.find(v => /es-ES|es-MX|Spanish/i.test(v.lang));
+      return vozES || voices[0] || null;
+    }
+    
     function hablar(texto) {
       const utterance = new SpeechSynthesisUtterance(texto);
-      utterance.lang = 'es-ES';
+      const voz = elegirVozEspañola();
+      
+      if (voz) {
+        utterance.voice = voz;
+      }
+      
+      utterance.lang = (voz && voz.lang) || 'es-ES';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      // Cancelar cualquier síntesis en curso
+      speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
     }
     
-    // Reconocimiento
+    // Cargar voces cuando estén disponibles
+    cargarVoces();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = cargarVoces;
+    }
+    
+    // ============================================
+    // RECONOCIMIENTO DE VOZ
+    // ============================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (SpeechRecognition) {
@@ -306,8 +351,12 @@
       } else if (comando.includes("completar") || comando.includes("terminar")) {
         const num = parseInt(palabras[1]) || 0;
         completar(num);
+      } else if (comando.includes("leer")) {
+        leerTodasLasTareas();
       } else if (comando.includes("limpiar")) {
         limpiar();
+      } else {
+        hablar("Comando no reconocido");
       }
     }
     
@@ -393,8 +442,8 @@
         }
         
       } else if (gesto === "mano_abierta") {
-        mostrarResumen();
-        document.getElementById("statusGestos").textContent = "🖐️ Mano abierta: Mostrando resumen";
+        leerTodasLasTareas();
+        document.getElementById("statusGestos").textContent = "🖐️ Mano abierta: Leyendo tareas";
       }
     }
     
