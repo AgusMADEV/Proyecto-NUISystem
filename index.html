@@ -58,7 +58,7 @@
       background: #1d4ed8;
     }
     
-    #status {
+    #status, #statusGestos {
       padding: 15px;
       background: #f0f0f0;
       border-radius: 5px;
@@ -163,10 +163,14 @@
         <canvas class="output_canvas" width="640" height="480"></canvas>
       </div>
       
+      <div id="statusGestos">Iniciando cámara...</div>
+      
       <div class="info">
         <strong>Gestos disponibles:</strong>
-        ✌️ Dos dedos: Añadir tarea<br>
-        ✊ Puño cerrado: Eliminar última tarea
+        ✌️ Dos dedos: Añadir tarea aleatoria<br>
+        👍 Pulgar arriba: Completar última tarea pendiente<br>
+        ✊ Puño cerrado: Eliminar última tarea<br>
+        🖐️ Mano abierta (5 dedos): Muestra información
       </div>
     </div>
   </div>
@@ -177,6 +181,16 @@
     // ============================================
     let tareas = [];
     let contadorId = 1;
+    
+    const tareasAleatorias = [
+      "Revisar correo electrónico",
+      "Hacer ejercicio",
+      "Leer un libro",
+      "Preparar presentación",
+      "Llamar a un amigo",
+      "Organizar escritorio",
+      "Estudiar desarrollo web"
+    ];
     
     // ============================================
     // FUNCIONES DE TAREAS
@@ -236,6 +250,13 @@
       tareas = [];
       mostrarTabla();
       hablar("Lista limpia");
+    }
+
+    function mostrarResumen() {
+      const total = tareas.length;
+      const completadas = tareas.filter(t => t.completada).length;
+      const pendientes = total - completadas;
+      hablar(`Tienes ${total} tareas. ${completadas} completadas y ${pendientes} pendientes`);
     }
     
     // ============================================
@@ -302,33 +323,78 @@
     function detectarGesto(landmarks) {
       if (!landmarks) return null;
       
+      const pulgar = landmarks[4];
       const indicePunta = landmarks[8];
       const medioTip = landmarks[12];
       const anularTip = landmarks[16];
       const meniqueTip = landmarks[20];
       
-      // Contar dedos extendidos
-      let dedos = 0;
-      if (indicePunta.y < landmarks[6].y) dedos++;
-      if (medioTip.y < landmarks[10].y) dedos++;
-      if (anularTip.y < landmarks[14].y) dedos++;
-      if (meniqueTip.y < landmarks[18].y) dedos++;
+      // Detectar dedos extendidos
+      function dedoExtendido(punta, base) {
+        return punta.y < base.y;
+      }
       
-      if (dedos === 2) return "dos_dedos";
-      if (dedos === 0) return "puno";
+      const indiceExtendido = dedoExtendido(indicePunta, landmarks[6]);
+      const medioExtendido = dedoExtendido(medioTip, landmarks[10]);
+      const anularExtendido = dedoExtendido(anularTip, landmarks[14]);
+      const meniqueExtendido = dedoExtendido(meniqueTip, landmarks[18]);
+      const pulgarExtendido = pulgar.x < landmarks[3].x;
+      
+      const dedosExtendidos = [
+        indiceExtendido,
+        medioExtendido,
+        anularExtendido,
+        meniqueExtendido
+      ].filter(Boolean).length;
+      
+      // Gestos específicos
+      if (indiceExtendido && medioExtendido && !anularExtendido && !meniqueExtendido) {
+        return "dos_dedos"; // ✌️
+      }
+      
+      if (pulgarExtendido && !indiceExtendido && !medioExtendido && !anularExtendido && !meniqueExtendido) {
+        return "pulgar_arriba"; // 👍
+      }
+      
+      if (!indiceExtendido && !medioExtendido && !anularExtendido && !meniqueExtendido) {
+        return "puno"; // ✊
+      }
+      
+      if (dedosExtendidos >= 4 && pulgarExtendido) {
+        return "mano_abierta"; // 🖐️
+      }
       
       return null;
     }
     
     function ejecutarGesto(gesto) {
       const ahora = Date.now();
-      if (ahora - ultimoGesto < 2000) return; // 2 segundos entre gestos
+      if (ahora - ultimoGesto < 2000) return;
       ultimoGesto = ahora;
       
       if (gesto === "dos_dedos") {
-        agregar("Nueva tarea");
+        const tareaAleatoria = tareasAleatorias[Math.floor(Math.random() * tareasAleatorias.length)];
+        agregar(tareaAleatoria);
+        document.getElementById("statusGestos").textContent = "✌️ Dos dedos: Tarea añadida";
+        
+      } else if (gesto === "pulgar_arriba") {
+        const pendienteIndex = tareas.findIndex(t => !t.completada);
+        if (pendienteIndex !== -1) {
+          completar(pendienteIndex);
+          document.getElementById("statusGestos").textContent = "👍 Pulgar arriba: Tarea completada";
+        } else {
+          hablar("No hay tareas pendientes");
+        }
+        
       } else if (gesto === "puno") {
-        if (tareas.length > 0) eliminar(tareas.length - 1);
+        if (tareas.length > 0) {
+          eliminar(tareas.length - 1);
+          document.getElementById("statusGestos").textContent = "✊ Puño: Última tarea eliminada";
+        }
+        
+      } else if (gesto === "mano_abierta") {
+        mostrarResumen();
+        document.getElementById("statusGestos").textContent = "🖐️ Mano abierta: Mostrando resumen";
       }
     }
     
@@ -344,6 +410,8 @@
           const gesto = detectarGesto(landmarks);
           if (gesto) ejecutarGesto(gesto);
         }
+      } else {
+        document.getElementById("statusGestos").textContent = "Muestra tu mano a la cámara...";
       }
     }
     
@@ -368,7 +436,9 @@
       height: 480
     });
     
-    camera.start();
+    camera.start().then(() => {
+      document.getElementById("statusGestos").textContent = "✅ Cámara activa";
+    });
     
     // ============================================
     // EVENTOS
