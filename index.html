@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Tareas - Voz y Gestos</title>
+  <meta name="description" content="Sistema de gestión de tareas con interfaces naturales: reconocimiento de voz y gestos">
+  <title>Sistema de Gestión Natural - Voz y Gestos</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
@@ -80,6 +81,19 @@
       font-size: 1.25em;
       font-weight: 600;
       letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     
     .controls {
@@ -178,16 +192,6 @@
       text-decoration: line-through;
       opacity: 0.6;
     }
-
-    .estado-completada {
-      color: var(--success);
-      font-weight: 600;
-    }
-
-    .estado-pendiente {
-      color: var(--warning);
-      font-weight: 600;
-    }
     
     .video-container {
       position: relative;
@@ -236,9 +240,64 @@
     }
 
     .empty-state-icon {
-      font-size: 3em;
-      margin-bottom: 16px;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
       opacity: 0.3;
+    }
+
+    .gesture-info {
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .gesture-info h3 {
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      font-weight: 600;
+      font-size: 0.95em;
+    }
+
+    .gesture-info ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .gesture-info li {
+      padding: 12px 0;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: color 0.15s ease;
+    }
+
+    .gesture-info li:hover {
+      color: var(--text-primary);
+    }
+
+    .gesture-info li:last-child {
+      border-bottom: none;
+    }
+
+    .gesture-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1em;
+      font-weight: 600;
+      color: var(--text-secondary);
+      flex-shrink: 0;
     }
 
     @media (max-width: 1200px) {
@@ -279,47 +338,83 @@
   
   <div class="container">
     <div class="panel">
-      <h2>📋 Gestión de Tareas</h2>
+      <h2>
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+        </svg>
+        Gestión de Tareas
+      </h2>
       
       <div class="controls">
-        <button id="btnEscuchar">🎤 Escuchar</button>
-        <button id="btnLimpiar">🗑️ Limpiar</button>
+        <button id="btnEscuchar">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          Escuchar
+        </button>
+        <button id="btnLimpiar">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Limpiar
+        </button>
       </div>
       
-      <div id="status">Presiona "Escuchar" para dar comandos de voz</div>
+      <div id="status">Pulsa "Escuchar" para dar órdenes por voz...</div>
       
       <div id="contenedorTabla"></div>
       
       <div class="info">
         <strong>Comandos de voz disponibles</strong>
         <div>
-          • "agregar [nombre]" - Añade una nueva tarea<br>
-          • "eliminar [número]" - Elimina tarea por índice<br>
-          • "completar [número]" - Marca tarea como completada<br>
-          • "leer tareas" - Lee todas las tareas en voz alta<br>
-          • "limpiar" - Elimina todas las tareas
+          • "<strong>agregar [tarea]</strong>" - Añade una nueva tarea<br>
+          • "<strong>eliminar [número]</strong>" - Elimina tarea por índice<br>
+          • "<strong>completar [número]</strong>" - Marca tarea como completada<br>
+          • "<strong>leer tareas</strong>" - Lee todas las tareas en voz alta<br>
+          • "<strong>limpiar</strong>" - Elimina todas las tareas
         </div>
       </div>
     </div>
     
     <div class="panel">
-      <h2>👋 Control por Gestos</h2>
+      <h2>
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path>
+        </svg>
+        Control por Gestos
+      </h2>
       
       <div class="video-container">
         <video class="input_video" autoplay playsinline muted></video>
         <canvas class="output_canvas" width="400" height="300"></canvas>
       </div>
       
-      <div id="statusGestos">Iniciando cámara...</div>
+      <div id="statusGestos">Iniciando cámara y reconocimiento de gestos...</div>
       
-      <div class="info">
-        <strong>Gestos disponibles</strong>
-        <div>
-          ✌️ <strong>Dos dedos:</strong> Añadir tarea aleatoria<br>
-          👍 <strong>Pulgar arriba:</strong> Completar última tarea pendiente<br>
-          ✊ <strong>Puño cerrado:</strong> Eliminar última tarea<br>
-          🖐️ <strong>Mano abierta:</strong> Leer todas las tareas
-        </div>
+      <div class="gesture-info">
+        <h3>Gestos Disponibles</h3>
+        <ul>
+          <li>
+            <div class="gesture-icon">II</div>
+            <div><strong>Dos dedos:</strong> Añadir tarea aleatoria</div>
+          </li>
+          <li>
+            <div class="gesture-icon">↑</div>
+            <div><strong>Pulgar arriba:</strong> Completar última tarea</div>
+          </li>
+          <li>
+            <div class="gesture-icon">●</div>
+            <div><strong>Puño cerrado:</strong> Eliminar última tarea</div>
+          </li>
+          <li>
+            <div class="gesture-icon">▢</div>
+            <div><strong>Mano abierta:</strong> Leer tareas por voz</div>
+          </li>
+        </ul>
       </div>
     </div>
   </div>
@@ -350,7 +445,11 @@
       if (tareas.length === 0) {
         contenedor.innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+            </div>
             <p style="font-size: 1.1em; margin-bottom: 8px;">No hay tareas aún</p>
             <p style="font-size: 0.9em; opacity: 0.8;">Usa comandos de voz o gestos para agregar tareas</p>
           </div>
@@ -361,15 +460,16 @@
       let html = '<table><thead><tr><th style="width: 60px;">#</th><th>Tarea</th><th style="width: 100px; text-align: center;">Estado</th></tr></thead><tbody>';
       
       tareas.forEach((tarea, index) => {
-        const clase = tarea.completada ? 'completada' : '';
-        const estadoTexto = tarea.completada ? '✅' : '⏳';
-        const estadoClase = tarea.completada ? 'estado-completada' : 'estado-pendiente';
+        const estado = tarea.completada 
+          ? '<svg viewBox="0 0 24 24" width="16" height="16" style="stroke: #10b981; fill: none; stroke-width: 2;"><polyline points="20 6 9 17 4 12"></polyline></svg>' 
+          : '<svg viewBox="0 0 24 24" width="16" height="16" style="stroke: #94a3b8; fill: none; stroke-width: 2;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+        const estilo = tarea.completada ? 'style="text-decoration: line-through; opacity: 0.6;"' : '';
         
         html += `
-          <tr class="${clase}">
+          <tr ${estilo}>
             <td>${index}</td>
             <td>${tarea.nombre}</td>
-            <td class="${estadoClase}" style="text-align: center;">${estadoTexto}</td>
+            <td style="text-align: center;">${estado}</td>
           </tr>
         `;
       });
@@ -477,12 +577,12 @@
       
       reconocimiento.onresult = (event) => {
         const texto = event.results[0][0].transcript.toLowerCase();
-        document.getElementById("status").textContent = `Comando: "${texto}"`;
+        document.getElementById("status").textContent = `📝 Comando: "${texto}"`;
         procesarComando(texto);
       };
       
       reconocimiento.onerror = () => {
-        document.getElementById("status").textContent = "Error en reconocimiento";
+        document.getElementById("status").textContent = "❌ Error en reconocimiento";
       };
       
       document.getElementById("btnEscuchar").onclick = () => {
@@ -609,7 +709,7 @@
           if (gesto) ejecutarGesto(gesto);
         }
       } else {
-        document.getElementById("statusGestos").textContent = "Muestra tu mano a la cámara...";
+        document.getElementById("statusGestos").textContent = "👋 Muestra tu mano a la cámara...";
       }
     }
     
@@ -620,8 +720,8 @@
     hands.setOptions({
       maxNumHands: 1,
       modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7
     });
     
     hands.onResults(onResults);
@@ -635,7 +735,7 @@
     });
     
     camera.start().then(() => {
-      document.getElementById("statusGestos").textContent = "✅ Cámara activa";
+      document.getElementById("statusGestos").textContent = "✅ Cámara activa - Muestra gestos con tu mano";
     });
     
     // ============================================
