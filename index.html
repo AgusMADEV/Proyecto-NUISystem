@@ -5,82 +5,173 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Tareas - Voz y Gestos</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    :root {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-glass: rgba(255, 255, 255, 0.7);
+      --border-color: rgba(0, 0, 0, 0.08);
+      --text-primary: #1a1a1a;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: var(--text-primary);
       line-height: 1.6;
+      font-weight: 400;
     }
     
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 24px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
-      color: #333;
+      margin-bottom: 40px;
+      color: var(--text-primary);
+      font-size: 2em;
+      font-weight: 600;
+      letter-spacing: -0.025em;
     }
     
     .panel {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius);
+      padding: 32px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
+      transition: all 0.2s ease;
+    }
+
+    .panel:hover {
+      box-shadow: var(--shadow-lg);
     }
 
     h2 {
-      color: #333;
-      margin-bottom: 15px;
-      font-size: 1.2em;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      font-size: 1.25em;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
     }
     
     button {
-      background: #2563eb;
-      color: white;
-      border: none;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
       padding: 10px 20px;
-      border-radius: 5px;
+      border-radius: 8px;
+      font-size: 0.875em;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 14px;
-      margin-right: 10px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
     }
     
     button:hover {
-      background: #1d4ed8;
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    button:active {
+      transform: translateY(0);
     }
     
     #status, #statusGestos {
-      padding: 15px;
-      background: #f0f0f0;
-      border-radius: 5px;
-      margin: 15px 0;
-      min-height: 50px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      min-height: 56px;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.875em;
+      display: flex;
+      align-items: center;
     }
     
     table {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
     }
     
     th, td {
-      padding: 12px;
+      padding: 14px 16px;
       text-align: left;
-      border-bottom: 1px solid #ddd;
     }
     
     th {
-      background: #f8f8f8;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
       font-weight: 600;
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.875em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tbody tr {
+      transition: background 0.15s ease;
+    }
+    
+    tbody tr:hover {
+      background: var(--bg-primary);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
     }
 
     .completada {
@@ -89,24 +180,26 @@
     }
 
     .estado-completada {
-      color: #10b981;
+      color: var(--success);
       font-weight: 600;
     }
 
     .estado-pendiente {
-      color: #f59e0b;
+      color: var(--warning);
       font-weight: 600;
     }
     
     .video-container {
       position: relative;
-      border-radius: 8px;
+      border-radius: var(--radius);
       overflow: hidden;
-      background: #000;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
     }
     
     canvas {
       width: 100%;
+      height: auto;
       display: block;
     }
     
@@ -115,16 +208,65 @@
     }
 
     .info {
-      background: #e3f2fd;
-      padding: 15px;
-      border-radius: 5px;
-      margin-top: 15px;
-      font-size: 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--accent);
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 0.875em;
+      color: var(--text-secondary);
     }
 
     .info strong {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .info div {
+      line-height: 1.8;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-tertiary);
+    }
+
+    .empty-state-icon {
+      font-size: 3em;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    @media (max-width: 1200px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+
+      body {
+        padding: 30px 20px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        gap: 20px;
+      }
+
+      .panel {
+        padding: 24px;
+      }
+
+      h1 {
+        font-size: 1.75em;
+      }
+
+      h2 {
+        font-size: 1.125em;
+      }
     }
   </style>
   
@@ -133,26 +275,30 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 </head>
 <body>
+  <h1>Sistema de Gestión con Interfaces Naturales</h1>
+  
   <div class="container">
-    <h1>Sistema de Tareas con Voz y Gestos</h1>
-    
     <div class="panel">
       <h2>📋 Gestión de Tareas</h2>
       
-      <button id="btnEscuchar">🎤 Escuchar</button>
-      <button id="btnLimpiar">🗑️ Limpiar Todo</button>
+      <div class="controls">
+        <button id="btnEscuchar">🎤 Escuchar</button>
+        <button id="btnLimpiar">🗑️ Limpiar</button>
+      </div>
       
       <div id="status">Presiona "Escuchar" para dar comandos de voz</div>
       
       <div id="contenedorTabla"></div>
       
       <div class="info">
-        <strong>Comandos disponibles:</strong>
-        • "agregar [nombre]" - Añade tarea<br>
-        • "eliminar [número]" - Elimina tarea<br>
-        • "completar [número]" - Marca tarea como completada<br>
-        • "leer tareas" - Lee todas las tareas en voz alta<br>
-        • "limpiar" - Elimina todas
+        <strong>Comandos de voz disponibles</strong>
+        <div>
+          • "agregar [nombre]" - Añade una nueva tarea<br>
+          • "eliminar [número]" - Elimina tarea por índice<br>
+          • "completar [número]" - Marca tarea como completada<br>
+          • "leer tareas" - Lee todas las tareas en voz alta<br>
+          • "limpiar" - Elimina todas las tareas
+        </div>
       </div>
     </div>
     
@@ -161,17 +307,19 @@
       
       <div class="video-container">
         <video class="input_video" autoplay playsinline muted></video>
-        <canvas class="output_canvas" width="640" height="480"></canvas>
+        <canvas class="output_canvas" width="400" height="300"></canvas>
       </div>
       
       <div id="statusGestos">Iniciando cámara...</div>
       
       <div class="info">
-        <strong>Gestos disponibles:</strong>
-        ✌️ Dos dedos: Añadir tarea aleatoria<br>
-        👍 Pulgar arriba: Completar última tarea pendiente<br>
-        ✊ Puño cerrado: Eliminar última tarea<br>
-        🖐️ Mano abierta: Leer todas las tareas
+        <strong>Gestos disponibles</strong>
+        <div>
+          ✌️ <strong>Dos dedos:</strong> Añadir tarea aleatoria<br>
+          👍 <strong>Pulgar arriba:</strong> Completar última tarea pendiente<br>
+          ✊ <strong>Puño cerrado:</strong> Eliminar última tarea<br>
+          🖐️ <strong>Mano abierta:</strong> Leer todas las tareas
+        </div>
       </div>
     </div>
   </div>
@@ -200,11 +348,17 @@
       const contenedor = document.getElementById("contenedorTabla");
       
       if (tareas.length === 0) {
-        contenedor.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">No hay tareas</p>';
+        contenedor.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p style="font-size: 1.1em; margin-bottom: 8px;">No hay tareas aún</p>
+            <p style="font-size: 0.9em; opacity: 0.8;">Usa comandos de voz o gestos para agregar tareas</p>
+          </div>
+        `;
         return;
       }
 
-      let html = '<table><thead><tr><th>#</th><th>Tarea</th><th>Estado</th></tr></thead><tbody>';
+      let html = '<table><thead><tr><th style="width: 60px;">#</th><th>Tarea</th><th style="width: 100px; text-align: center;">Estado</th></tr></thead><tbody>';
       
       tareas.forEach((tarea, index) => {
         const clase = tarea.completada ? 'completada' : '';
@@ -215,7 +369,7 @@
           <tr class="${clase}">
             <td>${index}</td>
             <td>${tarea.nombre}</td>
-            <td class="${estadoClase}">${estadoTexto}</td>
+            <td class="${estadoClase}" style="text-align: center;">${estadoTexto}</td>
           </tr>
         `;
       });
@@ -273,7 +427,7 @@
     }
     
     // ============================================
-    // SÍNTESIS DE VOZ MEJORADA
+    // SÍNTESIS DE VOZ
     // ============================================
     let voices = [];
     
@@ -282,7 +436,6 @@
     }
     
     function elegirVozEspañola() {
-      // Buscar voz en español prioritariamente
       const vozES = voices.find(v => /es-ES|es-MX|Spanish/i.test(v.lang));
       return vozES || voices[0] || null;
     }
@@ -300,12 +453,10 @@
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       
-      // Cancelar cualquier síntesis en curso
       speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
     }
     
-    // Cargar voces cuando estén disponibles
     cargarVoces();
     if (speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = cargarVoces;
@@ -378,7 +529,6 @@
       const anularTip = landmarks[16];
       const meniqueTip = landmarks[20];
       
-      // Detectar dedos extendidos
       function dedoExtendido(punta, base) {
         return punta.y < base.y;
       }
@@ -396,21 +546,20 @@
         meniqueExtendido
       ].filter(Boolean).length;
       
-      // Gestos específicos
       if (indiceExtendido && medioExtendido && !anularExtendido && !meniqueExtendido) {
-        return "dos_dedos"; // ✌️
+        return "dos_dedos";
       }
       
       if (pulgarExtendido && !indiceExtendido && !medioExtendido && !anularExtendido && !meniqueExtendido) {
-        return "pulgar_arriba"; // 👍
+        return "pulgar_arriba";
       }
       
       if (!indiceExtendido && !medioExtendido && !anularExtendido && !meniqueExtendido) {
-        return "puno"; // ✊
+        return "puno";
       }
       
       if (dedosExtendidos >= 4 && pulgarExtendido) {
-        return "mano_abierta"; // 🖐️
+        return "mano_abierta";
       }
       
       return null;
@@ -481,8 +630,8 @@
       onFrame: async () => {
         await hands.send({image: video});
       },
-      width: 640,
-      height: 480
+      width: 400,
+      height: 300
     });
     
     camera.start().then(() => {
