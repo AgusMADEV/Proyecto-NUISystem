@@ -131,7 +131,7 @@
       transform: translateY(0);
     }
     
-    #status, #statusGestos {
+    #statusVoz, #statusGestos {
       padding: 16px;
       background: var(--bg-secondary);
       border-radius: 8px;
@@ -211,25 +211,25 @@
       display: none;
     }
 
-    .info {
+    .comando-ejemplo {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-left: 3px solid var(--accent);
       padding: 20px;
+      margin: 20px 0;
       border-radius: 8px;
-      margin-top: 20px;
-      font-size: 0.875em;
       color: var(--text-secondary);
+      font-size: 0.875em;
     }
 
-    .info strong {
+    .comando-ejemplo strong {
       display: block;
       margin-bottom: 12px;
       color: var(--text-primary);
       font-weight: 600;
     }
 
-    .info div {
+    .comando-ejemplo div {
       line-height: 1.8;
     }
 
@@ -364,18 +364,18 @@
         </button>
       </div>
       
-      <div id="status">Pulsa "Escuchar" para dar órdenes por voz...</div>
+      <div id="statusVoz">Pulsa "Escuchar" para dar órdenes por voz...</div>
       
       <div id="contenedorTabla"></div>
       
-      <div class="info">
+      <div class="comando-ejemplo">
         <strong>Comandos de voz disponibles</strong>
-        <div>
+        <div style="margin-top: 8px; line-height: 1.8;">
           • "<strong>agregar [tarea]</strong>" - Añade una nueva tarea<br>
           • "<strong>eliminar [número]</strong>" - Elimina tarea por índice<br>
           • "<strong>completar [número]</strong>" - Marca tarea como completada<br>
           • "<strong>leer tareas</strong>" - Lee todas las tareas en voz alta<br>
-          • "<strong>limpiar</strong>" - Elimina todas las tareas
+          • "<strong>limpiar todo</strong>" - Elimina todas las tareas
         </div>
       </div>
     </div>
@@ -421,29 +421,24 @@
 
   <script>
     // ============================================
-    // DATOS
+    // DATOS Y ESTADO DE LA APLICACIÓN
     // ============================================
-    let tareas = [];
-    let contadorId = 1;
-    
-    const tareasAleatorias = [
-      "Revisar correo electrónico",
-      "Hacer ejercicio",
-      "Leer un libro",
-      "Preparar presentación",
-      "Llamar a un amigo",
-      "Organizar escritorio",
-      "Estudiar desarrollo web"
+    let tareas = [
+      {"id": 1, "titulo": "Estudiar interfaces naturales", "completada": false},
+      {"id": 2, "titulo": "Practicar reconocimiento de voz", "completada": false},
+      {"id": 3, "titulo": "Desarrollar proyecto final", "completada": false}
     ];
     
+    let contadorId = 4;
+    let lastGestureTime = 0;
+    const GESTURE_COOLDOWN = 2000; // 2 segundos entre gestos
+    
     // ============================================
-    // FUNCIONES DE TAREAS
+    // FUNCIONES DE INTERFAZ Y DATOS
     // ============================================
-    function mostrarTabla() {
-      const contenedor = document.getElementById("contenedorTabla");
-      
+    function pintaTabla() {
       if (tareas.length === 0) {
-        contenedor.innerHTML = `
+        document.querySelector("#contenedorTabla").innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">
               <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none">
@@ -457,61 +452,71 @@
         return;
       }
 
-      let html = '<table><thead><tr><th style="width: 60px;">#</th><th>Tarea</th><th style="width: 100px; text-align: center;">Estado</th></tr></thead><tbody>';
+      let cadena = `
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th>Tarea</th>
+              <th style="width: 100px; text-align: center;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
       
       tareas.forEach((tarea, index) => {
         const estado = tarea.completada 
           ? '<svg viewBox="0 0 24 24" width="16" height="16" style="stroke: #10b981; fill: none; stroke-width: 2;"><polyline points="20 6 9 17 4 12"></polyline></svg>' 
           : '<svg viewBox="0 0 24 24" width="16" height="16" style="stroke: #94a3b8; fill: none; stroke-width: 2;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
         const estilo = tarea.completada ? 'style="text-decoration: line-through; opacity: 0.6;"' : '';
-        
-        html += `
+        cadena += `
           <tr ${estilo}>
             <td>${index}</td>
-            <td>${tarea.nombre}</td>
+            <td>${tarea.titulo}</td>
             <td style="text-align: center;">${estado}</td>
           </tr>
         `;
       });
       
-      html += '</tbody></table>';
-      contenedor.innerHTML = html;
+      cadena += "</tbody></table>";
+      document.querySelector("#contenedorTabla").innerHTML = cadena;
     }
     
-    function agregar(nombre) {
-      if (!nombre) return;
-      tareas.push({ id: contadorId++, nombre: nombre, completada: false });
-      mostrarTabla();
-      hablar(`Tarea agregada: ${nombre}`);
+    function agregarTarea(titulo) {
+      if (!titulo || titulo.trim() === '') {
+        hablar("No puedo agregar una tarea vacía");
+        return;
+      }
+      tareas.push({
+        id: contadorId++,
+        titulo: titulo.trim(),
+        completada: false
+      });
+      pintaTabla();
+      hablar(`Tarea agregada: ${titulo}`);
     }
     
-    function eliminar(indice) {
+    function eliminarTarea(indice) {
       if (indice >= 0 && indice < tareas.length) {
         const tareaEliminada = tareas[indice];
         tareas.splice(indice, 1);
-        mostrarTabla();
-        hablar(`Tarea eliminada: ${tareaEliminada.nombre}`);
-      } else {
-        hablar("Índice de tarea no válido");
-      }
-    }
-
-    function completar(indice) {
-      if (indice >= 0 && indice < tareas.length) {
-        tareas[indice].completada = true;
-        mostrarTabla();
-        hablar(`Tarea completada: ${tareas[indice].nombre}`);
+        pintaTabla();
+        hablar(`Tarea eliminada: ${tareaEliminada.titulo}`);
       } else {
         hablar("Índice de tarea no válido");
       }
     }
     
-    function limpiar() {
-      tareas = [];
-      mostrarTabla();
-      hablar("Todas las tareas han sido eliminadas");
+    function completarTarea(indice) {
+      if (indice >= 0 && indice < tareas.length) {
+        tareas[indice].completada = true;
+        pintaTabla();
+        hablar(`Tarea completada: ${tareas[indice].titulo}`);
+      } else {
+        hablar("Índice de tarea no válido");
+      }
     }
-
+    
     function leerTodasLasTareas() {
       if (tareas.length === 0) {
         hablar("No hay tareas en la lista");
@@ -521,9 +526,15 @@
       let mensaje = `Tienes ${tareas.length} tareas. `;
       tareas.forEach((tarea, index) => {
         const estado = tarea.completada ? "completada" : "pendiente";
-        mensaje += `Tarea ${index}: ${tarea.nombre}, ${estado}. `;
+        mensaje += `Tarea ${index}: ${tarea.titulo}, ${estado}. `;
       });
       hablar(mensaje);
+    }
+    
+    function limpiarTodas() {
+      tareas = [];
+      pintaTabla();
+      hablar("Todas las tareas han sido eliminadas");
     }
     
     // ============================================
@@ -535,32 +546,24 @@
       voices = speechSynthesis.getVoices();
     }
     
-    function elegirVozEspañola() {
-      const vozES = voices.find(v => /es-ES|es-MX|Spanish/i.test(v.lang));
-      return vozES || voices[0] || null;
+    function elegirVoz() {
+      const voz = voices.find(v => /es-|Spanish/i.test(v.lang)) || voices[0];
+      return voz || null;
     }
     
     function hablar(texto) {
       const utterance = new SpeechSynthesisUtterance(texto);
-      const voz = elegirVozEspañola();
-      
-      if (voz) {
-        utterance.voice = voz;
-      }
-      
+      const voz = elegirVoz();
+      if (voz) utterance.voice = voz;
       utterance.lang = (voz && voz.lang) || 'es-ES';
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      
       speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
     }
     
     cargarVoces();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = cargarVoces;
-    }
+    speechSynthesis.onvoiceschanged = cargarVoces;
     
     // ============================================
     // RECONOCIMIENTO DE VOZ
@@ -570,64 +573,118 @@
     if (SpeechRecognition) {
       const reconocimiento = new SpeechRecognition();
       reconocimiento.lang = "es-ES";
+      reconocimiento.interimResults = false;
+      reconocimiento.continuous = false;
       
-      reconocimiento.onstart = () => {
-        document.getElementById("status").textContent = "🎤 Escuchando...";
+      reconocimiento.onstart = function() {
+        document.getElementById("btnEscuchar").classList.add("listening");
+        document.getElementById("statusVoz").textContent = "🎤 Escuchando... Habla ahora";
       };
       
-      reconocimiento.onresult = (event) => {
-        const texto = event.results[0][0].transcript.toLowerCase();
-        document.getElementById("status").textContent = `📝 Comando: "${texto}"`;
-        procesarComando(texto);
+      reconocimiento.onend = function() {
+        document.getElementById("btnEscuchar").classList.remove("listening");
       };
       
-      reconocimiento.onerror = () => {
-        document.getElementById("status").textContent = "❌ Error en reconocimiento";
+      reconocimiento.onresult = function(event) {
+        const textoReconocido = event.results[0][0].transcript.toLowerCase();
+        document.getElementById("statusVoz").textContent = `📝 Comando: "${textoReconocido}"`;
+        
+        procesarComandoVoz(textoReconocido);
       };
       
-      document.getElementById("btnEscuchar").onclick = () => {
+      reconocimiento.onerror = function(event) {
+        document.getElementById("statusVoz").textContent = `❌ Error: ${event.error}`;
+        document.getElementById("btnEscuchar").classList.remove("listening");
+      };
+      
+      document.getElementById("btnEscuchar").onclick = function() {
         reconocimiento.start();
       };
+    } else {
+      document.getElementById("statusVoz").textContent = "❌ Tu navegador no soporta reconocimiento de voz";
+      document.getElementById("btnEscuchar").disabled = true;
     }
     
-    function procesarComando(comando) {
+    function procesarComandoVoz(comando) {
       const palabras = comando.split(" ");
+      const accion = palabras[0];
       
-      if (comando.includes("agregar") || comando.includes("añadir")) {
-        const tarea = palabras.slice(1).join(" ");
-        agregar(tarea);
-      } else if (comando.includes("eliminar") || comando.includes("borrar")) {
-        const num = parseInt(palabras[1]) || 0;
-        eliminar(num);
-      } else if (comando.includes("completar") || comando.includes("terminar")) {
-        const num = parseInt(palabras[1]) || 0;
-        completar(num);
-      } else if (comando.includes("leer")) {
-        leerTodasLasTareas();
-      } else if (comando.includes("limpiar")) {
-        limpiar();
-      } else {
-        hablar("Comando no reconocido");
+      switch(accion) {
+        case "agregar":
+        case "añadir":
+        case "crear":
+          const tarea = palabras.slice(1).join(" ");
+          agregarTarea(tarea);
+          break;
+          
+        case "eliminar":
+        case "borrar":
+          const num = convertirNumeroTexto(palabras[1]);
+          if (num !== null) {
+            eliminarTarea(num);
+          } else {
+            hablar("No entendí el número de la tarea");
+          }
+          break;
+          
+        case "completar":
+        case "terminar":
+          const numCompletar = convertirNumeroTexto(palabras[1]);
+          if (numCompletar !== null) {
+            completarTarea(numCompletar);
+          } else {
+            hablar("No entendí el número de la tarea");
+          }
+          break;
+          
+        case "leer":
+          leerTodasLasTareas();
+          break;
+          
+        case "limpiar":
+          limpiarTodas();
+          break;
+          
+        default:
+          hablar("Comando no reconocido. Intenta con agregar, eliminar, completar, leer o limpiar");
       }
     }
     
+    function convertirNumeroTexto(texto) {
+      const numeros = {
+        "cero": 0, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4,
+        "cinco": 5, "seis": 6, "siete": 7, "ocho": 8, "nueve": 9,
+        "diez": 10
+      };
+      
+      if (numeros.hasOwnProperty(texto)) {
+        return numeros[texto];
+      }
+      
+      const numeroDigito = parseInt(texto);
+      if (!isNaN(numeroDigito)) {
+        return numeroDigito;
+      }
+      
+      return null;
+    }
+    
     // ============================================
-    // GESTOS
+    // RECONOCIMIENTO DE GESTOS CON MEDIAPIPE
     // ============================================
     const video = document.querySelector('.input_video');
     const canvas = document.querySelector('.output_canvas');
     const ctx = canvas.getContext('2d');
     
-    let ultimoGesto = 0;
-    
     function detectarGesto(landmarks) {
-      if (!landmarks) return null;
+      if (!landmarks || landmarks.length === 0) return null;
       
       const pulgar = landmarks[4];
       const indicePunta = landmarks[8];
       const medioTip = landmarks[12];
       const anularTip = landmarks[16];
       const meniqueTip = landmarks[20];
+      const muneca = landmarks[0];
       
       function dedoExtendido(punta, base) {
         return punta.y < base.y;
@@ -658,59 +715,82 @@
         return "puno";
       }
       
-      if (dedosExtendidos >= 4 && pulgarExtendido) {
+      if (dedosExtendidos >= 4) {
         return "mano_abierta";
       }
       
       return null;
     }
     
-    function ejecutarGesto(gesto) {
+    function ejecutarAccionGesto(gesto) {
       const ahora = Date.now();
-      if (ahora - ultimoGesto < 2000) return;
-      ultimoGesto = ahora;
+      if (ahora - lastGestureTime < GESTURE_COOLDOWN) {
+        return;
+      }
       
-      if (gesto === "dos_dedos") {
-        const tareaAleatoria = tareasAleatorias[Math.floor(Math.random() * tareasAleatorias.length)];
-        agregar(tareaAleatoria);
-        document.getElementById("statusGestos").textContent = "✌️ Dos dedos: Tarea añadida";
-        
-      } else if (gesto === "pulgar_arriba") {
-        const pendienteIndex = tareas.findIndex(t => !t.completada);
-        if (pendienteIndex !== -1) {
-          completar(pendienteIndex);
-          document.getElementById("statusGestos").textContent = "👍 Pulgar arriba: Tarea completada";
-        } else {
-          hablar("No hay tareas pendientes");
-        }
-        
-      } else if (gesto === "puno") {
-        if (tareas.length > 0) {
-          eliminar(tareas.length - 1);
-          document.getElementById("statusGestos").textContent = "✊ Puño: Última tarea eliminada";
-        }
-        
-      } else if (gesto === "mano_abierta") {
-        leerTodasLasTareas();
-        document.getElementById("statusGestos").textContent = "🖐️ Mano abierta: Leyendo tareas";
+      lastGestureTime = ahora;
+      
+      const tareasAleatorias = [
+        "Revisar correo electrónico",
+        "Hacer ejercicio",
+        "Leer un libro",
+        "Preparar presentación",
+        "Llamar a un amigo",
+        "Organizar escritorio",
+        "Aprender algo nuevo"
+      ];
+      
+      switch(gesto) {
+        case "dos_dedos":
+          const tareaAleatoria = tareasAleatorias[Math.floor(Math.random() * tareasAleatorias.length)];
+          agregarTarea(tareaAleatoria);
+          document.getElementById("statusGestos").textContent = "✌️ Gesto: Dos dedos - Tarea añadida";
+          break;
+          
+        case "pulgar_arriba":
+          if (tareas.length > 0) {
+            const ultimaNoCompletada = tareas.findIndex(t => !t.completada);
+            if (ultimaNoCompletada !== -1) {
+              completarTarea(ultimaNoCompletada);
+              document.getElementById("statusGestos").textContent = "👍 Gesto: Pulgar arriba - Tarea completada";
+            }
+          }
+          break;
+          
+        case "puno":
+          if (tareas.length > 0) {
+            eliminarTarea(tareas.length - 1);
+            document.getElementById("statusGestos").textContent = "✊ Gesto: Puño - Última tarea eliminada";
+          }
+          break;
+          
+        case "mano_abierta":
+          leerTodasLasTareas();
+          document.getElementById("statusGestos").textContent = "🖐️ Gesto: Mano abierta - Leyendo tareas";
+          break;
       }
     }
     
     function onResults(results) {
+      ctx.save();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
       
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         for (const landmarks of results.multiHandLandmarks) {
           drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
-          drawLandmarks(ctx, landmarks, {color: '#FF0000', lineWidth: 1});
+          drawLandmarks(ctx, landmarks, {color: '#FF0000', lineWidth: 1, radius: 3});
           
           const gesto = detectarGesto(landmarks);
-          if (gesto) ejecutarGesto(gesto);
+          if (gesto) {
+            ejecutarAccionGesto(gesto);
+          }
         }
       } else {
         document.getElementById("statusGestos").textContent = "👋 Muestra tu mano a la cámara...";
       }
+      
+      ctx.restore();
     }
     
     const hands = new Hands({
@@ -739,14 +819,20 @@
     });
     
     // ============================================
-    // EVENTOS
+    // EVENTOS DE BOTONES
     // ============================================
-    document.getElementById("btnLimpiar").onclick = () => {
-      if (confirm("¿Eliminar todas las tareas?")) limpiar();
+    document.getElementById("btnLimpiar").onclick = function() {
+      if (confirm("¿Estás seguro de eliminar todas las tareas?")) {
+        limpiarTodas();
+      }
     };
     
-    // Inicializar
-    mostrarTabla();
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
+    pintaTabla();
+    hablar("Sistema de gestión con interfaces naturales iniciado. Puedes usar comandos de voz o gestos con las manos");
+    
   </script>
 </body>
 </html>
